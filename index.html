@@ -466,148 +466,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="paragraph">
 <p>O código completo é apresentado abaixo.</p>
 </div>
-<div class="paragraph">
-<p>#include &lt;iostream&gt;
-#include &lt;opencv2/opencv.hpp&gt;</p>
-</div>
-<div class="paragraph">
-<p>using namespace cv;</p>
-</div>
-<div class="paragraph">
-<p>int main(int argc, char** argv){
-  Mat image, mask;
-  int width, height;
-  int nobjects;</p>
-</div>
-<div class="literalblock">
+<div id="exa_labeling" class="listingblock cpp">
+<div class="title">labeling.cpp</div>
 <div class="content">
-<pre>int fundo = 20;
-int branco = 255;
-int furo = 0;
-int cFuro = 80;
-int sFuro = 200;</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>CvPoint p;
-image = imread(argv[1],CV_LOAD_IMAGE_GRAYSCALE);</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>if(!image.data){
-  std::cout &lt;&lt; "imagem nao carregou corretamente\n";
-  return(-1);
-}</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>// Mostrar imagem original
-imshow("Original", image);
-width=image.size().width;
-height=image.size().height;</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>p.x=0;
-p.y=0;</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>//Cria uma borda branca
-for (int i = 0; i &lt; width; i++) {
-  image.at&lt;uchar&gt;(i, height -1) = branco;
-  image.at&lt;uchar&gt;(i, 0) = branco;
-}</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>for (int i = 0; i &lt; height; i++) {
-  image.at&lt;uchar&gt;(0, i) = branco;
-  image.at&lt;uchar&gt;(width -1, i) = branco;
-}</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>//remove todos os elementos da borda
-floodFill(image, p, furo);</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>imshow("Sem borda", image);</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>//pinta o fundo de toda imagem
-floodFill(image, p, fundo);</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>imshow("fundo", image);</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>// busca todos os objetos
-nobjects=0;
-for(int i=0; i&lt;height; i++){
-    for(int j=0; j&lt;width; j++){
-      if(image.at&lt;uchar&gt;(i,j) == 255 ){
-		// achou um objeto
-		p.x=j;
-		p.y=i;
-		floodFill(image,p,sFuro);
-    nobjects++;
-	  }
-	}
-}</pre>
-</div>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>  //Procurando os que possuem furo
-  int qtdFuros= 0;
-  for (int i = 0; i &lt; height; i++) {
-    for (int j = 0; j &lt; width; j++) {
-      //Armazene a posição da bolha encontrada
-      if (image.at&lt;uchar&gt;(i,j) == sFuro || image.at&lt;uchar&gt;(i,j) == cFuro) {
-        p.x = j;
-        p.y = i;
-      }
-      else if (image.at&lt;uchar&gt;(i,j) == furo) {
-        //Caso for encontrado um furo, mudar o nome para cFuro
-         //se já não tiver mudado
-        if (image.at&lt;uchar&gt;(p.y, p.x) == sFuro) {
-          floodFill(image, p, cFuro);
-          qtdFuros++;
-        }
-        //mude para cFuro
-        p.x = j;
-        p.y = i;
-        floodFill(image, p, cFuro);
-      }
-    }
-  }
-  std::cout &lt;&lt; "\nTotal de bolhas = " &lt;&lt; nobjects;
-  std::cout &lt;&lt; "\ncom Furos = " &lt;&lt; qtdFuros;
-  nobjects = (nobjects - qtdFuros);
-  std::cout &lt;&lt; "\nsem Furos = " &lt;&lt; nobjects;
-  std::cout &lt;&lt; "\n";
-  imshow("Final", image);
-  imwrite("labeling.png", image);
-  waitKey();
-  return 0;
-}
-//----</pre>
+<pre class="highlight"><code>include:exemplos/labeling.cpp[]</code></pre>
 </div>
 </div>
 </div>
@@ -616,7 +478,7 @@ for(int i=0; i&lt;height; i++){
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-04 10:56:19 -03
+Last updated 2017-09-04 13:24:05 -03
 </div>
 </div>
 </body>

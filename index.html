@@ -433,7 +433,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Bárbara Gabriella &lt;<a href="mailto:barbaragabriellass@outlook.com">barbaragabriellass@outlook.com</a>&gt;</p>
+<p>Bárbara Gabriella &lt;<a href="mailto:barbaragabriellass@outlook.com">barbaragabriellass@outlook.com</a>&gt;
+Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.danyllo@outlook.com</a>&gt;</p>
 </div>
 <div class="paragraph">
 <p>Link github (link:http://barbaragabriella.github.io)</p>
@@ -444,7 +445,45 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <h2 id="_ementa">Ementa</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_bolhas">Bolhas</h3>
+<h3 id="_manipulando_pixels_em_uma_imagem">Manipulando pixels em uma imagem</h3>
+<div class="sect3">
+<h4 id="_regiões">Regiões</h4>
+<div class="paragraph">
+<p>A atividade consiste em implementar um programa que exiba o negativo de uma parte da imagem partindo de dois pontos, P1 e P2, fornecidos pelo usuário. O programa inicia solicitando as coordenadas ao usário e só da sequência quando coordenadas válidas são informadas. Feito isso, para dar o efeito de negativo só é preciso inverter a escala de cada pixel da região especificada. No caso de imagem colorida, é preciso inverter cada componente RGB.</p>
+</div>
+<div class="paragraph">
+<p>O código é como segue.</p>
+</div>
+<div id="exa_regions" class="listingblock cpp">
+<div class="title">regions.cpp</div>
+<div class="content">
+<pre class="highlight"><code>include:exemplos/regions.cpp[]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Foi utilizada a seguinte imagem e o resultado é como segue.</p>
+</div>
+<div id="fig_imagem" class="imageblock">
+<div class="content">
+<img src="figs/imagem.jpg" alt="Imagem original">
+</div>
+<div class="title">Figure 1. imagem original</div>
+</div>
+<div id="fig_regions" class="imageblock">
+<div class="content">
+<img src="figs/regionsjpg" alt="Imagem alterada">
+</div>
+<div class="title">Figure 2. imagem alterada</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_troca_regiões">Troca Regiões</h4>
+<div class="paragraph">
+<p>===</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_bolhas">Bolhas</h4>
 <div class="paragraph">
 <p>O objetivo desta atividade era implementar no código labeling.cpp de forma que ele contasse o número de bolhas que possui e não possui furos, desconsiderando as bolhas que tocam as bordas da imagem, baseado na imagem original mostrada abaixo /<a href="#fig_bolhas">bolhas</a>.</p>
 </div>
@@ -452,7 +491,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="content">
 <img src="figs/bolhas.png" alt="Imagem original">
 </div>
-<div class="title">Figure 1. imagem original</div>
+<div class="title">Figure 3. imagem original</div>
 </div>
 <div class="paragraph">
 <p>Para realizar a contagem, primeiro temos que eliminar todas as bolhas que tocam as bordas, uma solução foi aplicar a cor branca (cor das bolhas) nos pixels da borda e então usamos o floodfill para pintar no mesmo tom do fundo da imagem (preto). Uma vez feito isso, eliminamos todas as bolhas que tocavam as bordas. Agora, precisamos diferenciar o fundo da imagem dos furos das bolhas. Para isso, aplicamos outro floodfill com um tom diferente do preto (esse tom foi chamado de fundo no programa).</p>
@@ -479,13 +518,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="content">
 <img src="figs/final.png" alt="Resultado do algoritmo">
 </div>
-<div class="title">Figure 2. Resultado</div>
+<div class="title">Figure 4. Resultado</div>
 </div>
 <div id="fig_numero" class="imageblock">
 <div class="content">
 <img src="figs/numero.png" alt="Número de bolhas">
 </div>
-<div class="title">Figure 3. Número de bolhas</div>
+<div class="title">Figure 5. Número de bolhas</div>
+</div>
 </div>
 </div>
 </div>
@@ -493,7 +533,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-05 18:15:14 -03
+Last updated 2017-09-05 18:27:10 -03
 </div>
 </div>
 </body>

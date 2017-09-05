@@ -462,13 +462,13 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="paragraph">
 <p>Foi utilizada a seguinte imagem e o resultado é como segue.</p>
 </div>
-<div id="fig_imagem" class="imageblock">
+<div id="fig_imagem" class="imageblock text-center">
 <div class="content">
 <img src="figs/imagem.jpg" alt="Imagem original">
 </div>
 <div class="title">Figure 1. imagem original</div>
 </div>
-<div id="fig_regions" class="imageblock">
+<div id="fig_regions" class="imageblock text-center">
 <div class="content">
 <img src="figs/regions.png" alt="Imagem alterada">
 </div>
@@ -488,7 +488,7 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="paragraph">
 <p>O resultado pode ser visto na figura <a href="#fig_trocaregioes">trocaregioes</a></p>
 </div>
-<div id="fig_trocaregioes" class="imageblock">
+<div id="fig_trocaregioes" class="imageblock text-center">
 <div class="content">
 <img src="figs/trocaregioes.png" alt="Imagem invertida">
 </div>
@@ -511,7 +511,7 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="paragraph">
 <p>O objetivo desta atividade era implementar no código labeling.cpp de forma que ele contasse o número de bolhas que possui e não possui furos, desconsiderando as bolhas que tocam as bordas da imagem, baseado na imagem original mostrada abaixo <a href="#fig_bolhas">bolhas</a>.</p>
 </div>
-<div id="fig_bolhas" class="imageblock">
+<div id="fig_bolhas" class="imageblock text-center">
 <div class="content">
 <img src="figs/bolhas.png" alt="Imagem original">
 </div>
@@ -537,7 +537,7 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="paragraph">
 <p>O resultado do programa pode ser analisado nas figuras abaixo.</p>
 </div>
-<div id="fig_final" class="imageblock">
+<div id="fig_final" class="imageblock text-center">
 <div class="content">
 <img src="figs/final.png" alt="Resultado do algoritmo">
 </div>
@@ -551,12 +551,62 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_manipulação_de_histogramas">Manipulação de histogramas</h3>
+<div class="sect3">
+<h4 id="_equalização">Equalização</h4>
+<div class="paragraph">
+<p>O objetivo deste algoritmo é realizar a equalização do histograma para cada imagem capturada, antes da sua exibição. A equalização consiste em melhorar o contraste da imagem "esticando" sua intensidade. Abaixo encontra-se o código do programa <a href="#exa_equalized.cpp">[exa_equalized.cpp]</a></p>
+</div>
+<div id="exa_equalized" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/equalized.cpp[]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>O programa inicial, histograma, já calculava o histograma de cada imagem RGB. Nesse caso, cada imagem capturada era transformada para a escala de cinza, calculado o histograma e então o método de equalizar era aplicado. Após a equalização, aplicava-se novamente o histograma par anotar a diferença. Ao final, as duas imagens eram exibidas. Para fins de melhorar análise, foi utilizada imagem para uma melhor percepção do método. A imagem original, colorida, é representada abaixo. As demais imagens, em escala de cinza e equalizada, são <a href="#fig_nequalizado">nequalizado</a> e <a href="#fig_equalizado">equalizado</a>.</p>
+</div>
+<div id="fig_image2" class="imageblock text-center">
+<div class="content">
+<img src="figs/image2.png" alt="Imagem original">
+</div>
+<div class="title">Figure 7. Imagem original</div>
+</div>
+<div id="fig_nequalizado" class="imageblock text-center">
+<div class="content">
+<img src="figs/nequalizado.png" alt="Imagem em escala de cinza">
+</div>
+<div class="title">Figure 8. Imagem em escala de cinza</div>
+</div>
+<div id="fig_equalizado" class="imageblock text-center">
+<div class="content">
+<img src="figs/equalizado.png" alt="Imagem equalizada">
+</div>
+<div class="title">Figure 9. Imagem equalizada</div>
+</div>
+<div class="paragraph">
+<p>Para uma melhor análise, segue os histogramas em grande escala. No primeiro histograma vemos que os pixels parecem agrupados em torno do meio da faixa de intensidade disponível. Com a equalização, esse intervalo é esticado. Logo vemos que histograma da imagem equalizada apresenta uma maior uniformidade entre os tons de cinza presentes.</p>
+</div>
+<div id="fig_histogramaNeq" class="imageblock text-center">
+<div class="content">
+<img src="figs/histogramaNeq.png" alt="Imagem em escala de cinza">
+</div>
+<div class="title">Figure 10. Imagem em escala de cinza</div>
+</div>
+<div id="fig_histogramaEq" class="imageblock text-center">
+<div class="content">
+<img src="figs/histogramaEq.png" alt="Imagem equalizada">
+</div>
+<div class="title">Figure 11. Imagem equalizada</div>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-05 18:45:29 -03
+Last updated 2017-09-05 19:44:52 -03
 </div>
 </div>
 </body>

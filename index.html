@@ -456,7 +456,58 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 <div id="exa_regions" class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/regions.cpp[]</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int, char**){
+  Mat image;
+  Vec3b val;
+  int xp1, xp2, yp1, yp2;
+
+  bool flag = true;
+
+  image= imread("imagem.jpg",CV_LOAD_IMAGE_COLOR);
+  if(!image.data)
+    cout &lt;&lt; "imagem não abriu" &lt;&lt; endl;
+
+  namedWindow("janela",WINDOW_AUTOSIZE);
+
+  //Solicitar coordenadas do usuário
+  while(flag){
+    cout &lt;&lt; "Informe as coordenadas\n";
+    cout &lt;&lt; "x de P1: ";
+    cin &gt;&gt; xp1;
+    cout &lt;&lt; "y de P1: ";
+    cin &gt;&gt; yp1;
+    cout &lt;&lt; "x de P2: ";
+    cin &gt;&gt; xp2;
+    cout &lt;&lt; "y de P2: ";
+    cin &gt;&gt; yp2;
+
+    if((xp1 &gt; image.size().height || yp1 &gt; image.size().width)&amp;&amp;(xp2&lt;xp1||yp2&lt;yp1)&amp;&amp;(xp2 &gt; image.size().height || yp2 &gt; image.size().width)){
+      cout &lt;&lt; "informe as coordenadas corretamente\n";
+    }
+    else flag = false;
+  }
+
+  for(int i=xp1;i&lt;xp2;i++){
+    for(int j=yp1;j&lt;yp2;j++){
+      val = image.at&lt;Vec3b&gt;(i,j);
+      val[0] = 255 - val[0];
+      val[1] = 255 - val[1];
+      val[2] = 255 - val[2];
+      image.at&lt;Vec3b&gt;(i,j) = val;
+    }
+  }
+
+  imshow("janela", image);
+  imwrite("regions.png",image);
+  waitKey();
+  return 0;
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -482,7 +533,45 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 <div id="exa_trocaregioes" class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/trocaregioes.cpp[]</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int, char**){
+  Mat image;
+  Vec3b val;
+  int x, y;
+
+  int width, height;
+
+  image= imread("imagem.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+  if(!image.data)
+    cout &lt;&lt; "imagem nao abriu" &lt;&lt; endl;
+
+  namedWindow("janela",WINDOW_AUTOSIZE);
+
+  width = image.size().width;
+  height = image.size().height;
+
+//cria uma imagem do tamanho da imagem original
+  Mat trocaregioes(height, width, CV_LOAD_IMAGE_GRAYSCALE);
+
+  for(int i=0;i&lt;height;i++){
+    for(int j=0;j&lt;width;j++){
+      x=(i+height/2)%(height);
+      y=(j+width/2)%(width);
+      trocaregioes.at&lt;uchar&gt;(i,j)=image.at&lt;uchar&gt;(x,y);
+    }
+  }
+
+  imshow("janela", trocaregioes);
+  imwrite("trocaregioes.png",trocaregioes);
+  waitKey();
+
+  return 0;
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -531,7 +620,109 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 <div id="exa_labeling" class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/labeling.cpp[]</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+
+int main(int argc, char** argv){
+  Mat image, mask;
+  int width, height;
+  int nobjects;
+
+
+  int fundo = 20;
+  int branco = 255;
+  int furo = 0;
+  int cFuro = 80;
+  int sFuro = 200;
+
+  CvPoint p;
+  image = imread(argv[1],CV_LOAD_IMAGE_GRAYSCALE);
+
+
+  if(!image.data){
+    std::cout &lt;&lt; "imagem nao carregou corretamente\n";
+    return(-1);
+  }
+
+  // Mostrar imagem original
+  imshow("Original", image);
+  width=image.size().width;
+  height=image.size().height;
+
+  p.x=0;
+  p.y=0;
+
+  //Cria uma borda branca
+  for (int i = 0; i &lt; width; i++) {
+    image.at&lt;uchar&gt;(i, height -1) = branco;
+    image.at&lt;uchar&gt;(i, 0) = branco;
+  }
+
+  for (int i = 0; i &lt; height; i++) {
+    image.at&lt;uchar&gt;(0, i) = branco;
+    image.at&lt;uchar&gt;(width -1, i) = branco;
+  }
+
+
+  //remove todos os elementos da borda
+  floodFill(image, p, furo);
+
+  imshow("Sem borda", image);
+
+  //pinta o fundo de toda imagem
+  floodFill(image, p, fundo);
+
+  imshow("fundo", image);
+
+  // busca todos os objetos
+  nobjects=0;
+  for(int i=0; i&lt;height; i++){
+      for(int j=0; j&lt;width; j++){
+        if(image.at&lt;uchar&gt;(i,j) == 255 ){
+  		// achou um objeto
+  		p.x=j;
+  		p.y=i;
+  		floodFill(image,p,sFuro);
+      nobjects++;
+  	  }
+  	}
+  }
+
+  //Procurando os que possuem furo
+  int qtdFuros= 0;
+  for (int i = 0; i &lt; height; i++) {
+    for (int j = 0; j &lt; width; j++) {
+      //Armazene a posição da bolha encontrada
+      if (image.at&lt;uchar&gt;(i,j) == sFuro || image.at&lt;uchar&gt;(i,j) == cFuro) {
+        p.x = j;
+        p.y = i;
+      }
+      else if (image.at&lt;uchar&gt;(i,j) == furo) {
+        //Caso for encontrado um furo, mudar o nome para cFuro
+         //se já não tiver mudado
+        if (image.at&lt;uchar&gt;(p.y, p.x) == sFuro) {
+          floodFill(image, p, cFuro);
+          qtdFuros++;
+        }
+        //mude para cFuro
+        p.x = j;
+        p.y = i;
+        floodFill(image, p, cFuro);
+      }
+    }
+  }
+  std::cout &lt;&lt; "\nTotal de bolhas = " &lt;&lt; nobjects;
+  std::cout &lt;&lt; "\ncom Furos = " &lt;&lt; qtdFuros;
+  nobjects = (nobjects - qtdFuros);
+  std::cout &lt;&lt; "\nsem Furos = " &lt;&lt; nobjects;
+  std::cout &lt;&lt; "\n";
+  imshow("Final", image);
+  imwrite("labeling.png", image);
+  waitKey();
+  return 0;
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -560,7 +751,105 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 <div id="exa_equalized" class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/equalized.cpp[]</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv){
+  int key;
+  Mat image, equalizar;
+
+  int width, height;
+
+  VideoCapture cap;
+
+  vector&lt;Mat&gt; planes;
+
+  Mat histR, histE;
+
+  int nbins = 64;
+
+  float range[] = {0, 256};
+
+  const float *histrange = { range };
+
+  bool uniform = true;
+
+  bool acummulate = false;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "cameras indisponiveis";
+    return -1;
+  }
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  cout &lt;&lt; "largura = " &lt;&lt; width &lt;&lt; endl;
+  cout &lt;&lt; "altura  = " &lt;&lt; height &lt;&lt; endl;
+
+  int histw = nbins, histh = nbins/2;
+
+  Mat histImgR(histh, histw, CV_BGR2GRAY, Scalar(0,0,0));
+  Mat histImgE(histh, histw, CV_BGR2GRAY, Scalar(0,0,0));
+
+  while(1){
+    cap &gt;&gt; image;
+    //split (image, planes);
+
+    /// converte para tons de cinza
+    cvtColor( image, image, CV_BGR2GRAY );
+
+    calcHist(&amp;image, 1, 0, Mat(), histR, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+
+    normalize(histR, histR, 0, histImgR.rows, NORM_MINMAX, -1, Mat());
+
+    histImgR.setTo(Scalar(0));
+
+    for(int i=0; i&lt;nbins; i++){
+      line(histImgR,
+           Point(i, histh),
+           Point(i, histh-cvRound(histR.at&lt;float&gt;(i))),
+           Scalar(0, 0, 255), 1, 8, 0);
+    }
+
+    equalizeHist( image, equalizar);
+
+    calcHist(&amp;equalizar, 1, 0, Mat(), histE, 1,
+               &amp;nbins, &amp;histrange,
+               uniform, acummulate);
+
+    normalize(histE, histE, 0, histImgE.rows, NORM_MINMAX, -1, Mat());
+    histImgE.setTo(Scalar(0));
+
+    for(int i=0; i&lt;nbins; i++){
+       line(histImgE, Point(i, histh),
+         Point(i, cvRound(histE.at&lt;float&gt;(i))),
+         Scalar(255), 1, 8, 0);
+    }
+
+    histImgR.copyTo(image(Rect(0, 0 ,nbins, histh)));
+    histImgE.copyTo(equalizar(Rect(0, 0 ,nbins, histh)));
+
+    imshow("image", image);
+    imshow("Equalizado", equalizar);
+
+    imwrite("nequalizado.png", image);
+    imwrite("equalizado.png", equalizar);
+    key = (char) waitKey(10);
+    if(key == 27) {
+      break;
+    }
+  }
+
+  return 0;
+}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -606,7 +895,7 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-05 19:47:38 -03
+Last updated 2017-09-05 20:11:07 -03
 </div>
 </div>
 </body>

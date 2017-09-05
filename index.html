@@ -454,10 +454,10 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="paragraph">
 <p>O código é como segue.</p>
 </div>
-<div id="exa_regions" class="listingblock cpp">
+<div id="exa_regions" class="listingblock">
 <div class="title">regions.cpp</div>
 <div class="content">
-<pre class="highlight"><code>include:exemplos/regions.cpp[]</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/regions.cpp[]</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -479,19 +479,45 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="sect3">
 <h4 id="_troca_regiões">Troca Regiões</h4>
 <div class="paragraph">
-<p>===</p>
+<p>A ideia nessa parte da atividade era trocar os quadrantes em diagonal na imagem. primeiro criou-se uma imagem do mesmo tamanho que a original, e depois o algoritmo cuidou de preencher cada pixel da nova imagem. O programa é o seguinte.</p>
+</div>
+<div id="exa_trocaregioes" class="listingblock">
+<div class="title">trocaregioes.cpp</div>
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/trocaregioes.cpp[]</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>O resultado pode ser visto na figura <a href="#fig_trocaregioes">trocaregioes</a></p>
+</div>
+<div id="fig_trocaregioes" class="imageblock">
+<div class="content">
+<img src="figs/trocaregioes.png" alt="Imagem invertida">
+</div>
+<div class="title">Figure 3. imagem invertida</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_preenchendo_regiões">Preenchendo Regiões</h3>
 <div class="sect3">
 <h4 id="_bolhas">Bolhas</h4>
 <div class="paragraph">
-<p>O objetivo desta atividade era implementar no código labeling.cpp de forma que ele contasse o número de bolhas que possui e não possui furos, desconsiderando as bolhas que tocam as bordas da imagem, baseado na imagem original mostrada abaixo /<a href="#fig_bolhas">bolhas</a>.</p>
+<p>No código oringinal, cada objeto tem um valor que varia entre 0 e 255, e que quando há mais 255 objetos a otulação fica comprometida. Para resolver esse problema, basta resetar o valor de nobjects utilizando a função módulo.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">floodFill(image, p, nobjects % 255);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>O objetivo desta atividade era implementar no código labeling.cpp de forma que ele contasse o número de bolhas que possui e não possui furos, desconsiderando as bolhas que tocam as bordas da imagem, baseado na imagem original mostrada abaixo <a href="#fig_bolhas">bolhas</a>.</p>
 </div>
 <div id="fig_bolhas" class="imageblock">
 <div class="content">
 <img src="figs/bolhas.png" alt="Imagem original">
 </div>
-<div class="title">Figure 3. imagem original</div>
+<div class="title">Figure 4. imagem original</div>
 </div>
 <div class="paragraph">
 <p>Para realizar a contagem, primeiro temos que eliminar todas as bolhas que tocam as bordas, uma solução foi aplicar a cor branca (cor das bolhas) nos pixels da borda e então usamos o floodfill para pintar no mesmo tom do fundo da imagem (preto). Uma vez feito isso, eliminamos todas as bolhas que tocavam as bordas. Agora, precisamos diferenciar o fundo da imagem dos furos das bolhas. Para isso, aplicamos outro floodfill com um tom diferente do preto (esse tom foi chamado de fundo no programa).</p>
@@ -505,10 +531,10 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="paragraph">
 <p>O código completo é apresentado abaixo.</p>
 </div>
-<div id="exa_labeling" class="listingblock cpp">
+<div id="exa_labeling" class="listingblock">
 <div class="title">labeling.cpp</div>
 <div class="content">
-<pre class="highlight"><code>include:exemplos/labeling.cpp[]</code></pre>
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">include:exemplos/labeling.cpp[]</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -518,13 +544,13 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 <div class="content">
 <img src="figs/final.png" alt="Resultado do algoritmo">
 </div>
-<div class="title">Figure 4. Resultado</div>
+<div class="title">Figure 5. Resultado</div>
 </div>
 <div id="fig_numero" class="imageblock">
 <div class="content">
 <img src="figs/numero.png" alt="Número de bolhas">
 </div>
-<div class="title">Figure 5. Número de bolhas</div>
+<div class="title">Figure 6. Número de bolhas</div>
 </div>
 </div>
 </div>
@@ -533,7 +559,7 @@ Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.dan
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-05 18:28:31 -03
+Last updated 2017-09-05 18:43:55 -03
 </div>
 </div>
 </body>

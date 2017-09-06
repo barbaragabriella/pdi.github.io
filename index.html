@@ -889,13 +889,436 @@ int main(int argc, char** argv){
 <div class="title">Figure 11. Histograma da imagem equalizada</div>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_detecção_de_movimento">Detecção de Movimento</h4>
+<div class="paragraph">
+<p>Agora, vamos utilizar o histograma da imagem capturada pela camera em tempo real para detectar sem há ou não movimento. Este algoritimo pode ser implementado utilizando o histograma de uma ou mais cores, para sem mais completo, utilizaremos de as três cores.</p>
+</div>
+<div id="motiondetector" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv){
+  Mat image;
+  int width, height;
+  VideoCapture cap;
+  vector&lt;Mat&gt; planes;
+  Mat histR, histG, histB;
+  int nbins = 64;
+  float range[] = {0, 256};
+  const float *histrange = { range };
+  bool uniform = true;
+  bool acummulate = false;
+
+  Mat histLastR, histLastG, histLastB;
+  double histDifR = 0, histDifRLast = 0,
+      histDifG = 0, histDifGLast = 0,
+      histDifB = 0, histDifBLast = 0,
+      limite = 10;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "cameras indisponiveis";
+    return -1;
+  }
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  cout &lt;&lt; "largura = " &lt;&lt; width &lt;&lt; endl;
+  cout &lt;&lt; "altura  = " &lt;&lt; height &lt;&lt; endl;
+
+  int histw = nbins, histh = nbins/2;
+  Mat histImgR(histh, histw, CV_8UC3, Scalar(0,0,0));
+  Mat histImgG(histh, histw, CV_8UC3, Scalar(0,0,0));
+  Mat histImgB(histh, histw, CV_8UC3, Scalar(0,0,0));
+
+
+
+  cap &gt;&gt; image;
+  split (image, planes);
+  calcHist(&amp;planes[0], 1, 0, Mat(), histLastR, 1,
+           &amp;nbins, &amp;histrange,
+           uniform, acummulate);
+  calcHist(&amp;planes[1], 1, 0, Mat(), histLastG, 1,
+           &amp;nbins, &amp;histrange,
+           uniform, acummulate);
+  calcHist(&amp;planes[2], 1, 0, Mat(), histLastB, 1,
+           &amp;nbins, &amp;histrange,
+           uniform, acummulate);
+
+  while(1){
+    cap &gt;&gt; image;
+    split (image, planes);
+    calcHist(&amp;planes[0], 1, 0, Mat(), histR, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+    calcHist(&amp;planes[1], 1, 0, Mat(), histG, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+    calcHist(&amp;planes[2], 1, 0, Mat(), histB, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+
+    normalize(histR, histR, 0, histImgR.rows, NORM_MINMAX, -1, Mat());
+    normalize(histG, histG, 0, histImgG.rows, NORM_MINMAX, -1, Mat());
+    normalize(histB, histB, 0, histImgB.rows, NORM_MINMAX, -1, Mat());
+
+    histImgR.setTo(Scalar(0));
+    histImgG.setTo(Scalar(0));
+    histImgB.setTo(Scalar(0));
+
+    for(int i = 0; i &lt; nbins; i++){
+      line(histImgR,
+           Point(i, histh),
+           Point(i, histh-cvRound(histR.at&lt;float&gt;(i))),
+           Scalar(0, 0, 255), 1, 8, 0);
+      line(histImgG,
+           Point(i, histh),
+           Point(i, histh-cvRound(histG.at&lt;float&gt;(i))),
+           Scalar(0, 255, 0), 1, 8, 0);
+      line(histImgB,
+           Point(i, histh),
+           Point(i, histh-cvRound(histB.at&lt;float&gt;(i))),
+           Scalar(255, 0, 0), 1, 8, 0);
+    }
+    histImgR.copyTo(image(Rect(0, 0       ,nbins, histh)));
+    histImgG.copyTo(image(Rect(0, histh   ,nbins, histh)));
+    histImgB.copyTo(image(Rect(0, 2*histh ,nbins, histh)));
+
+    // recebe a diferença entre  os histogramas
+    histDifR = compareHist(histR, histLastR, CV_COMP_INTERSECT);
+    histDifG = compareHist(histG, histLastG, CV_COMP_INTERSECT);
+    histDifB = compareHist(histB, histLastB, CV_COMP_INTERSECT);
+
+    // Compara a diferença atual com a antiga incrementada de um limiar
+    if(histDifR &gt; histDifRLast + limite || histDifR &lt; histDifRLast - limite ||
+        histDifG &gt; histDifGLast + limite || histDifG &lt; histDifGLast - limite ||
+        histDifB &gt; histDifBLast + limite || histDifB &lt; histDifBLast - limite) {
+      putText(image, "Ha movimento", cvPoint(100,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(200,200,250), 1, CV_AA);
+    } else {
+      putText(image, "Sem movimento", cvPoint(100,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(200,200,250), 1, CV_AA);
+    }
+
+    histLastR = histR.clone();
+    histLastG = histG.clone();
+    histLastB = histB.clone();
+
+    histDifRLast = histDifR;
+    histDifGLast = histDifG;
+    histDifBLast = histDifB;
+
+    imshow("image", image);
+    if(waitKey(30) &gt;= 0) break;
+  }
+  return 0;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>O algoritmo trabalha recebendo o histograma atual (como já foi visto no exemplo anterior) e o compara com o histograma antigo através da chamda da função compareHist(), como é visto no trecho de código a seguir.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// recebe a diferença entre  os histogramas
+histDifR = compareHist(histR, histLastR, CV_COMP_INTERSECT);
+histDifG = compareHist(histG, histLastG, CV_COMP_INTERSECT);
+histDifB = compareHist(histB, histLastB, CV_COMP_INTERSECT);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Esta função retorna um double que é comparado com o seu valor anterior e verifica se esta comparação (ou diferença) está dentro de um limiar pré estabelecido. Se sim, é exibida uma mensagem na tela de vídeo de que não há movimento, se não, é uma mensagem de que há movimento na cena.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">// Compara a diferença atual com a antiga incrementada de um limiar
+if(histDifR &gt; histDifRLast + limite || histDifR &lt; histDifRLast - limite ||
+    histDifG &gt; histDifGLast + limite || histDifG &lt; histDifGLast - limite ||
+    histDifB &gt; histDifBLast + limite || histDifB &lt; histDifBLast - limite) {
+  putText(image, "Ha movimento", cvPoint(100,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(200,200,250), 1, CV_AA);
+} else {
+    putText(image, "Sem movimento", cvPoint(100,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, cvScalar(200,200,250), 1, CV_AA);
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As imagens a seguir ilustram os dois tipos de saída que o programa retorna. A primeira é quando <a href="#sem_movimento">não há movimento</a>, e a segunda é quando <a href="#com_movimento">há movimento</a>.</p>
+</div>
+<div id="sem_movimento" class="imageblock text-center">
+<div class="content">
+<img src="figs/sem_movimento.png" alt="Imagem sem movimento">
+</div>
+<div class="title">Figure 12. Imagem sem movimento</div>
+</div>
+<div id="com_movimento" class="imageblock text-center">
+<div class="content">
+<img src="figs/com_movimento.png" alt="Imagem com movimento">
+</div>
+<div class="title">Figure 13. Imagem com movimento</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_filtragem_no_domínio_espacial">Filtragem no Domínio Espacial</h3>
+<div class="sect3">
+<h4 id="_efeito_tiltshift_imagem">Efeito TiltShift - Imagem</h4>
+<div class="paragraph">
+<p>O tiltshift é um bonito efeito para se aplicar em suas fotos, dando a impressão de desfoco nas regiões superiores e inferiores através da aplicação de um borramento com a máscara "media" 5 x 5  demonstrada a seguir.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">float media[] = {1, 1, 1, 1, 1,
+                 1, 1, 1, 1, 1,
+                 1, 1, 1, 1, 1,
+                 1, 1, 1, 1, 1,
+                 1, 1, 1, 1, 1};</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>O código a seguir aplica o tiltshift a uma imagem passada como parametro. O usuário também pode ajustar o efeito através dos sliders presentes na interface. Quando o programa é encerrado, uma imagem é salva com o efeito programado.</p>
+</div>
+<div id="tiltshift" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+Mat mask(5,5,CV_32F), final;
+int maximo = 100;
+int height;
+
+double l1 = 0, l2 = 0, altura = 0.2, alfa;
+
+double decaimento = 1;
+int decaimento_slider = 0;
+
+int top_slider = 50;
+
+int faixa = 20;
+int altura_slider = 0;
+
+Mat image1, image2, blended;
+
+char TrackbarName[50];
+
+void ajuste(int, void* ){
+  faixa = (double) (top_slider * height) / maximo ; //calcula onde vai ser o centro do foco de acordo com o valor do slider
+  l1 = faixa - altura * height; //calcula os parametros l1 e l2 a partir do centro
+  l2 = faixa + altura * height;
+
+
+  if(l1 &lt; 0){ //caso l1 seja menor que 0, ele assume o valor zero
+     l1 = 0;
+  }
+  if(l2 &gt; height){ //caso l2 seja maior que a altura da imagem ele assume o valor da altura imagem
+   l2 = height;
+  }
+
+  for(int i = 0; i &lt; final.size().height; i++){ //a formula eh calculada linha a linha
+      alfa = 0.5 * (tanh((i - l1) / (double) (decaimento + 1.0)) - tanh((i-l2) / (double) (decaimento + 1.0)));
+      addWeighted(image1.row(i), alfa, final.row(i), 1.0 - alfa, 0.0, image2.row(i));
+  }
+  imshow("Tiltshift",image2); //mostra a imagem na tela
+  imwrite("Tiltshift.png",image2); //cria nova imagem
+}
+
+void on_trackbar_decaimento(int, void* ){
+  decaimento = (double) decaimento_slider;
+  ajuste(top_slider, 0);
+}
+
+void on_trackbar_altura(int, void* ){
+  altura = (double) altura_slider / maximo;
+  ajuste(top_slider, 0);
+}
+
+int main(int argvc, char** argv){
+  image1 = imread(argv[1]);
+  height = image1.size().height;
+  image2 = image1.clone();
+
+  Mat aux, mask, mask1;
+
+  float media[] = {1, 1, 1, 1, 1,
+                   1, 1, 1, 1, 1,
+                   1, 1, 1, 1, 1,
+                   1, 1, 1, 1, 1,
+                   1, 1, 1, 1, 1};
+
+  mask = Mat(5, 5, CV_32F, media);
+  scaleAdd(mask, 1 / 25.0, Mat::zeros(5, 5, CV_32F), mask1);
+  swap(mask, mask1);
+
+  image2.convertTo(aux, CV_32F);
+  // Aplicar o filtro algumas vezes para criar um bom desfoque
+  for (int i = 0; i &lt; 20; i++) {
+    filter2D(aux, aux, aux.depth(), mask, Point(2, 2), 0);
+  }
+
+  aux.convertTo(final, CV_8UC3);
+
+  namedWindow("tiltshift", 1);
+
+   sprintf( TrackbarName, "Centro");
+  createTrackbar( TrackbarName, "tiltshift",
+          &amp;top_slider,
+          maximo,
+          ajuste );
+  ajuste(top_slider, 0);
+
+  sprintf( TrackbarName, "Decaimento");
+  createTrackbar( TrackbarName, "tiltshift",
+          &amp;decaimento_slider,
+          maximo,
+          on_trackbar_decaimento );
+  on_trackbar_decaimento(decaimento_slider, 0);
+
+  sprintf( TrackbarName, "Altura");
+  createTrackbar( TrackbarName, "tiltshift",
+          &amp;altura_slider,
+          maximo,
+          on_trackbar_altura );
+  on_trackbar_altura(altura_slider, 0);
+
+  //ajuste();
+
+  waitKey(0);
+  imwrite("tiltshift.jpg", image2);
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_efeito_tiltshift_video">Efeito TiltShift - Video</h4>
+<div class="paragraph">
+<p>Uma aplicação bem interessante do efeito tiltshift é aplicá-lo em vídeos de timelapse, dando assim um efeito de "miniaturização" da cena. O código a seguir (<a href="#tiltshiftvideo">tiltshiftvideo</a>) aplica o tiltshift a um video passado como parametro.</p>
+</div>
+<div id="tiltshiftvideo" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;unistd.h&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int argvc, char** argv){
+  VideoCapture cap;
+  VideoWriter videoWriter;
+
+  Mat mask(5,5,CV_32F), final, image1, image2;
+  int height, width;
+
+  double l1 = 0, l2 = 0, altura = 0.2, d = 60, alfa;
+  int faixa = 20;
+
+  int stepReductionRate = 2, cont = 1;
+
+  cap.open(argv[1]);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "\n\nnao deu pra abrir o arquivo de entrada, foi mal\n";
+    return -1;
+  } else cout &lt;&lt; "arquivo de entrada lido\n";
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  Size s = Size(width, height);
+  videoWriter.open("video.avi", CV_FOURCC('D', 'I', 'V', '3'), cap.get(CV_CAP_PROP_FPS) / stepReductionRate, s, true);
+
+  if(!videoWriter.isOpened()) {
+    cout &lt;&lt; "\n\nnao deu pra abrir o arquivo de saida, foi mal\n";
+    return -1;
+  } else cout &lt;&lt; "arquivo de saida lido\n";
+
+  namedWindow("image", WINDOW_AUTOSIZE);
+  cout &lt;&lt; "dando inicio a edicao e gravacao do video\n";
+
+  while(cap.isOpened()) {
+    cap &gt;&gt; image1;
+
+    if (image1.empty()) break;
+
+    if(cont &lt; stepReductionRate){
+      cont++;
+      continue;
+    }
+    cont = 1;
+
+    height = image1.size().height;
+    image2 = image1.clone();
+
+    Mat aux, mask, mask1;
+
+    float media[] = {1, 1, 1, 1, 1,
+                     1, 1, 1, 1, 1,
+                     1, 1, 1, 1, 1,
+                     1, 1, 1, 1, 1,
+                     1, 1, 1, 1, 1};
+
+    mask = Mat(5, 5, CV_32F, media);
+    scaleAdd(mask, 1 / 25.0, Mat::zeros(5, 5, CV_32F), mask1);
+    swap(mask, mask1);
+
+    image2.convertTo(aux, CV_32F);
+    // Aplicar o filtro algumas vezes para criar um bom desfoque
+    for (int i = 0; i &lt; 20; i++) {
+      filter2D(aux, aux, aux.depth(), mask, Point(2, 2), 0);
+    }
+
+    aux.convertTo(final, CV_8UC3);
+
+    faixa = (double) 0.5 * height; //calcula onde vai ser o centro do foco de acordo com o valor do slider
+    l1 = faixa - altura * height; //calcula os parametros l1 e l2 a partir do centro
+    l2 = faixa + altura * height;
+
+    if(l1 &lt; 0){ //caso l1 seja menor que 0, ele assume o valor zero
+       l1 = 0;
+    }
+
+    if(l2 &gt; height){ //caso l2 seja maior que a altura da imagem ele assume o valor da altura imagem
+     l2 = height;
+    }
+
+    for(int i = 0; i &lt; final.size().height; i++){ //a formula eh calculada linha a linha
+        alfa = 0.5 * (tanh((i - l1) / (double) (d + 1.0)) - tanh((i-l2) / (double) (d + 1.0)));
+        addWeighted(image1.row(i), alfa, final.row(i), 1.0 - alfa, 0.0, image2.row(i));
+    }
+    videoWriter &lt;&lt; image2;
+  }
+  cout &lt;&lt; "video gravado com sucesso\n";
+  return 0;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Temos a classe VideoWriter que é utilizada para escrever um quadro em um arquivo de vídeo, como é visto ao longo do código. Primeiramente, tem-se que abrir o arquivo de saída (não necessariamente ele precise existir, pois o opencv cria para você) especificando o caminho, o codec de vídeo, a taxa de quadros ou framerate (no nosso caso ele foi dividido pela metade para dar o efeito de miniaturização desejado), o tamanho de cada quadro e se o vídeo tem cor ou não (se é RGB ou em preto e branco).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">videoWriter.open("video.avi", CV_FOURCC('D', 'I', 'V', '3'), cap.get(CV_CAP_PROP_FPS) / stepReductionRate, s, true);</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Após isso, aplica-se o efeito tiltshift a cada frame do vídeo que for realmente para o vídeo final (descartando um sim e outro não) até o final do vídeo, quando não houver mais quadro, ele fecha o laço de repetição e encerra o programa.</p>
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-05 20:11:07 -03
+Last updated 2017-09-05 21:13:48 -03
 </div>
 </div>
 </body>

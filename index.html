@@ -1064,7 +1064,185 @@ if(histDifR &gt; histDifRLast + limite || histDifR &lt; histDifRLast - limite ||
 </div>
 </div>
 <div class="sect2">
-<h3 id="_filtragem_no_domínio_espacial">Filtragem no Domínio Espacial</h3>
+<h3 id="_filtragem_no_domínio_espacial_i">Filtragem no domínio espacial I</h3>
+<div class="sect3">
+<h4 id="_filtro_laplaciano_do_guassiano">Filtro Laplaciano do guassiano</h4>
+<div class="paragraph">
+<p>O objetivo desse programa é adicionar uma nova funcionalidade ao programa original filtro espacial que seria aplicar o efeito laplaciano do gaussiano às imagens capturadas. O filtro laplaciano é um filtro de detecção de borda, usado para gerar bordas finas no controno da imagem. As imagens a seguir mostram a original, <a href="#fig_original">original</a>, e após a aplicação do filtro gaussiano, <a href="#fig_laplaciano">laplaciano</a>.</p>
+</div>
+<div id="fig_original" class="imageblock text-center">
+<div class="content">
+<img src="figs/original.png" alt="Imagem original">
+</div>
+<div class="title">Figure 14. Imagem original</div>
+</div>
+<div id="fig_laplaciano" class="imageblock text-center">
+<div class="content">
+<img src="figs/laplaciano.png" alt="Filtro laplaciano">
+</div>
+<div class="title">Figure 15. Filtro Laplaciano</div>
+</div>
+<div class="paragraph">
+<p>Aplicando o filtro gaussiano e em seguida o filtro laplaciano, laplaciano do gaussinao, as bordas ganham maior destaque, porém, mais ruídos são adicionados a imagem.</p>
+</div>
+<div id="fig_laplgauss" class="imageblock text-center">
+<div class="content">
+<img src="figs/laplgauss.png" alt="Filtro laplaciano do gaussiano">
+</div>
+<div class="title">Figure 16. Filtro Laplaciano do gaussiano</div>
+</div>
+<div class="paragraph">
+<p>O código é apresentado a seguir.</p>
+</div>
+<div id="laplgauss" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+void printmask(Mat &amp;m){
+  for(int i=0; i&lt;m.size().height; i++){
+    for(int j=0; j&lt;m.size().width; j++){
+      cout &lt;&lt; m.at&lt;float&gt;(i,j) &lt;&lt; ",";
+    }
+    cout &lt;&lt; endl;
+  }
+}
+
+void menu(){
+  cout &lt;&lt; "\npressione a tecla para ativar o filtro: \n"
+      "a - calcular modulo\n"
+      "m - media\n"
+      "g - gauss\n"
+      "v - vertical\n"
+      "h - horizontal\n"
+      "l - laplaciano\n"
+      "s - laplaciano do gaussiano\n"
+      "esc - sair\n";
+}
+
+int main(int argvc, char** argv){
+  VideoCapture video;
+  float media[] = {1,1,1,
+                   1,1,1,
+			             1,1,1};
+  float gauss[] = {1,2,1,
+			             2,4,2,
+			             1,2,1};
+  float horizontal[] = {-1,0,1,
+                        -2,0,2,
+                        -1,0,1};
+  float vertical[] = {-1,-2,-1,
+                       0, 0, 0,
+                       1, 2, 1};
+  float laplacian[] = { 0,-1, 0,
+                       -1, 4,-1,
+                        0,-1,0};
+
+  Mat cap, frame, frame32f, frameFiltered;
+  Mat mask(3,3,CV_32F), mask1;
+  Mat result, result1;
+  double width, height, min, max;
+  int absolut;
+  char key;
+  bool doubleFilter = false;
+
+  video.open(0);
+  if(!video.isOpened())
+    return -1;
+  width=video.get(CV_CAP_PROP_FRAME_WIDTH);
+  height=video.get(CV_CAP_PROP_FRAME_HEIGHT);
+  std::cout &lt;&lt; "largura=" &lt;&lt; width &lt;&lt; "\n";;
+  std::cout &lt;&lt; "altura =" &lt;&lt; height&lt;&lt; "\n";;
+
+  namedWindow("filtroespacial",1);
+
+  mask = Mat(3, 3, CV_32F, media);
+  scaleAdd(mask, 1/9.0, Mat::zeros(3,3,CV_32F), mask1);
+  swap(mask, mask1);
+  absolut=1; // calcs abs of the image
+
+  menu();
+  for(;;){
+    video &gt;&gt; cap;
+    cvtColor(cap, frame, CV_BGR2GRAY);
+    flip(frame, frame, 1);
+    imshow("original", frame);
+    frame.convertTo(frame32f, CV_32F);
+    filter2D(frame32f, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+    if(doubleFiler){
+      mask = Mat(3, 3, CV_32F, laplacian);
+      filter2D( frameFiltered, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+    }
+    if(absolut){
+      frameFiltered = abs(frameFiltered);
+    }
+    frameFiltered.convertTo(result, CV_8U);
+    imshow("filtroespacial", result);
+    key = (char) waitKey(10);
+    if( key == 27 ) break; // esc pressed!
+    switch(key){
+    case 'a':
+	  menu();
+      absolut=!absolut;
+      doubleFilter = false;
+      break;
+    case 'm':
+	  menu();
+      mask = Mat(3, 3, CV_32F, media);
+      scaleAdd(mask, 1/9.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      doubleFilter = false;
+      break;
+    case 'g':
+	  menu();
+      mask = Mat(3, 3, CV_32F, gauss);
+      scaleAdd(mask, 1/16.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      doubleFilter = false;
+      break;
+    case 'h':
+	  menu();
+      mask = Mat(3, 3, CV_32F, horizontal);
+      printmask(mask);
+      doubleFilter = false;
+      break;
+    case 'v':
+	  menu();
+      mask = Mat(3, 3, CV_32F, vertical);
+      printmask(mask);
+      doubleFilter = false;
+      break;
+    case 'l':
+	  menu();
+      mask = Mat(3, 3, CV_32F, laplacian);
+      printmask(mask);
+      doubleFilter = false;
+      break;
+    case 's':
+    menu();
+      mask = Mat(3, 3, CV_32F, gauss);
+      scaleAdd(mask, 1/16.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      doubleFilter = true;
+      break;
+    default:
+      break;
+    }
+  }
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_filtragem_no_domínio_espacial_ii">Filtragem no Domínio Espacial II</h3>
 <div class="sect3">
 <h4 id="_efeito_tiltshift_imagem">Efeito TiltShift - Imagem</h4>
 <div class="paragraph">
@@ -1080,7 +1258,7 @@ if(histDifR &gt; histDifRLast + limite || histDifR &lt; histDifRLast - limite ||
 </div>
 </div>
 <div class="paragraph">
-<p>O código a seguir aplica o tiltshift a uma imagem passada como parametro. O usuário também pode ajustar o efeito através dos sliders presentes na interface. Quando o programa é encerrado, uma imagem é salva com o efeito programado.</p>
+<p>O código a seguir aplica o tiltshift a uma imagem passada como parametro. O usuário também pode ajustar o efeito através dos sliders presentes na interface. Quando o programa é encerrado, uma imagem, <a href="#fig_tiltshift">tiltshift</a>, é salva com o efeito programado.</p>
 </div>
 <div id="tiltshift" class="listingblock">
 <div class="content">
@@ -1194,6 +1372,12 @@ int main(int argvc, char** argv){
   return 0;
 }</code></pre>
 </div>
+</div>
+<div id="fig_tiltshift" class="imageblock text-center">
+<div class="content">
+<img src="figs/tiltshift.jpg" alt="Efeito tiltshift">
+</div>
+<div class="title">Figure 17. Efeito tiltshift</div>
 </div>
 </div>
 <div class="sect3">
@@ -1318,7 +1502,7 @@ int main(int argvc, char** argv){
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-05 21:13:48 -03
+Last updated 2017-09-07 11:05:05 -03
 </div>
 </div>
 </body>

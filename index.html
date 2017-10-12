@@ -1496,13 +1496,193 @@ int main(int argvc, char** argv){
 <p>Após isso, aplica-se o efeito tiltshift a cada frame do vídeo que for realmente para o vídeo final (descartando um sim e outro não) até o final do vídeo, quando não houver mais quadro, ele fecha o laço de repetição e encerra o programa.</p>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_canny_e_pontilhismo">Canny e Pontilhismo</h4>
+<div class="paragraph">
+<p>Para esse exercício, foi implementado o programa cannypoins.cpp. A ideia é usar bordas em uma imagem pontilhada para dar um efeito de melhoramento. O algoritmo pega a imagem disponibilizada pelo usuário, e seleciona pixels aleatóriamente. Para cada pixel selecionado, é armazenada a cor para para então criar um circulo de tamanho de raio definido pelo usuário. Esse efeito criará o aspecto de pontilhismo. A partir disso, foi usada a função que que aplica o algoritmo de canny no pontilhismo para dar mais detalhes as regiões próximas a borda. As imagens a seguir mostram a imagem original com o efeito do pontilhismo e outra com o pontilhismo e canny.</p>
+</div>
+<div id="fig_imagem4" class="imageblock text-center">
+<div class="content">
+<img src="figs/imagem4.jpg" alt="Imagem original">
+</div>
+<div class="title">Figure 18. imagem original</div>
+</div>
+<div id="fig_pontos" class="imageblock text-center">
+<div class="content">
+<img src="figs/pontos.jpg" alt="Imagem com pontilhismo">
+</div>
+<div class="title">Figure 19. pontilhismo</div>
+</div>
+<div id="fig_cannypb" class="imageblock text-center">
+<div class="content">
+<img src="figs/cannypb.png" alt="Imagem com pontilhismo e canny">
+</div>
+<div class="title">Figure 20. pontilhismo e canny</div>
+</div>
+<div class="paragraph">
+<p>Para fins de comparação e melhor visualização, segue a imagem da borda e a imagem com pontilhismo e canny colorida.</p>
+</div>
+<div id="fig_icanny" class="imageblock text-center">
+<div class="content">
+<img src="figs/canny.jpg" alt="Bordas da imagem">
+</div>
+<div class="title">Figure 21. bordas da imagem</div>
+</div>
+<div id="fig_cannypoints" class="imageblock text-center">
+<div class="content">
+<img src="figs/cannypoints.png" alt="Imagem colorida">
+</div>
+<div class="title">Figure 22. colorida</div>
+</div>
+<div class="paragraph">
+<p>Segue o código.</p>
+</div>
+<div id="cannypoints" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;fstream&gt;
+#include &lt;iomanip&gt;
+#include &lt;vector&gt;
+#include &lt;algorithm&gt;
+#include &lt;numeric&gt;
+#include &lt;ctime&gt;
+#include &lt;cstdlib&gt;
+
+using namespace std;
+using namespace cv;
+
+int top_slider = 10;
+int top_slider_max = 200;
+
+int STEP=5;
+int JITTER=3;
+int RAIO=4;
+
+#define STEP_MAX 20
+#define JITTER_MAX 10
+#define RAIO_MAX 10
+
+
+Mat image, border, points;
+
+void on_trackbar_canny(int, void*){
+
+  vector&lt;int&gt; yrange;
+  vector&lt;int&gt; xrange;
+
+  Vec3b colorida;
+
+  int width, height, gray;
+  int x, y;
+
+  width=image.size().width;
+  height=image.size().height;
+
+  Canny(image, border, top_slider, 3*top_slider);
+  imshow("canny", border);
+
+  if(STEP &lt; 1) STEP = 1;
+  if(JITTER &lt; 1) JITTER = 1;
+  if(RAIO &lt; 1) RAIO = 1;
+
+  xrange.resize(height/STEP);
+  yrange.resize(width/STEP);
+
+  iota(xrange.begin(), xrange.end(), 0);
+  iota(yrange.begin(), yrange.end(), 0);
+
+  for(uint i=0; i&lt;xrange.size(); i++){
+    xrange[i]= xrange[i]*STEP+STEP/2;
+  }
+
+  for(uint i=0; i&lt;yrange.size(); i++){
+    yrange[i]= yrange[i]*STEP+STEP/2;
+  }
+
+  points = Mat(height, width, CV_8UC3, Scalar(255, 255, 255));
+
+  random_shuffle(xrange.begin(), xrange.end());
+
+  for(auto i : xrange){
+    random_shuffle(yrange.begin(), yrange.end());
+    for(auto j : yrange){
+      x = i+rand()%(2*JITTER)-JITTER+1;
+      y = j+rand()%(2*JITTER)-JITTER+1;
+      gray = image.at&lt;uchar&gt;(x,y);
+
+      circle(points,
+             cv::Point(y,x),
+             RAIO,
+             CV_RGB(colorida[0],colorida[1],colorida[2]),
+             -1,
+             CV_AA);
+    }
+  }
+
+  for(int i=0; i&lt;height; i++ ){
+        for(int j=0; j&lt;width; j++){
+           if(border.at&lt;uchar&gt;(i,j)&gt;0){
+              colorida[0] = (int)(image.at&lt;Vec3b&gt;(i,j)[2]);
+              colorida[1] = (int)(image.at&lt;Vec3b&gt;(i,j)[1]);
+              colorida[2] = (int)(image.at&lt;Vec3b&gt;(i,j)[0]);
+
+              circle(points,
+                     cv::Point(j,i),
+                     RAIO,
+                     CV_RGB(colorida[0],colorida[1],colorida[2]),
+                     -1,
+                     CV_AA);
+         }
+      }
+   }
+
+   imshow("cannypoints", points);
+}
+
+
+int main(int argc, char** argv){
+
+  image= imread(argv[1],CV_LOAD_IMAGE_COLOR);
+
+  namedWindow("cannypoints",1);
+  createTrackbar( "Threshold", "cannypoints",
+                &amp;top_slider,
+                top_slider_max,
+                on_trackbar_canny );
+
+  createTrackbar( "RAIO", "cannypoints",
+                  &amp;RAIO,
+                  RAIO_MAX,
+                  on_trackbar_canny );
+
+  createTrackbar( "JITTER", "cannypoints",
+                  &amp;JITTER,
+                  JITTER_MAX,
+                  on_trackbar_canny );
+
+  createTrackbar( "STEP", "cannypoints",
+                  &amp;STEP,
+                  STEP_MAX,
+                  on_trackbar_canny );
+
+  on_trackbar_canny(top_slider, 0 );
+
+  imwrite("cannyPoints.jpg", points);
+
+  waitKey();
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-09-07 11:05:05 -03
+Last updated 2017-10-12 17:27:50 -03
 </div>
 </div>
 </body>

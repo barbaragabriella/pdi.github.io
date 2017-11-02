@@ -433,8 +433,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
-<p>Bárbara Gabriella &lt;<a href="mailto:barbaragabriellass@outlook.com">barbaragabriellass@outlook.com</a>&gt;
-Vinícius Danyllo &lt;<a href="mailto:vinicius.danyllo@outlook.com">vinicius.danyllo@outlook.com</a>&gt;</p>
+<p>Bárbara Gabriella, Vinícius Danyllo &lt;<a href="mailto:barbaragabriellass@outlook.com">barbaragabriellass@outlook.com</a>, <a href="mailto:vinicius.danyllo@outlook.com">vinicius.danyllo@outlook.com</a>&gt;</p>
 </div>
 <div class="paragraph">
 <p>Link github (link:http://barbaragabriella.github.io)</p>
@@ -1497,6 +1496,248 @@ int main(int argvc, char** argv){
 </div>
 </div>
 <div class="sect3">
+<h4 id="_filtro_homomórfico">Filtro Homomórfico</h4>
+<div class="paragraph">
+<p>O filtro homomórfico é utilizado principalmente para "reiluminar" uma imagem. Ele faz uso da iluminância e da reflectância para realizar a filtragem no domínio da frequência.</p>
+</div>
+<div class="paragraph">
+<p>A implementação do filtro homomórfico é caracterizada principalmente no trecho a seguir (<a href="#trechohomomorfico">trechohomomorfico</a>), onde percebe-se que é uma versão modificada do filtro Gaussiano, mantenando as frequências altas e atenuando especialmente as frequẽncias altas.</p>
+</div>
+<div id="trechohomomorfico" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">for(int i = 0; i &lt; dft_M; i++) {
+	for(int j = 0; j &lt; dft_N; j++) {
+		radius = (double) (i - dft_M / 2) * (i - dft_M / 2) + (j - dft_N / 2) * (j - dft_N / 2);
+		tmp.at&lt;float&gt; (i, j) = (gH - gL) * (1 - exp(-c * (radius / pow(Do, 2)))) + gL;
+	}
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A seguir o código completo (<a href="#homomorfico">homomorfico</a>).</p>
+</div>
+<div id="homomorfico" class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-cpp" data-lang="cpp">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;opencv2/imgproc/imgproc.hpp&gt;
+
+#define RADIUS 20
+
+using namespace cv;
+using namespace std;
+
+// troca os quadrantes da imagem da DFT
+void deslocaDFT(Mat&amp; image ){
+    Mat tmp, A, B, C, D;
+
+    // se a imagem tiver tamanho impar, recorta a regiao para
+    // evitar cópias de tamanho desigual
+    image = image(Rect(0, 0, image.cols &amp; -2, image.rows &amp; -2));
+    int cx = image.cols/2;
+    int cy = image.rows/2;
+
+    // reorganiza os quadrantes da transformada
+    // A B   -&gt;  D C
+    // C D       B A
+    A = image(Rect(0, 0, cx, cy));
+    B = image(Rect(cx, 0, cx, cy));
+    C = image(Rect(0, cy, cx, cy));
+    D = image(Rect(cx, cy, cx, cy));
+
+    // A &lt;-&gt; D
+    A.copyTo(tmp);  D.copyTo(A);  tmp.copyTo(D);
+
+    // C &lt;-&gt; B
+    C.copyTo(tmp);  B.copyTo(C);  tmp.copyTo(B);
+}
+
+int main(int , char**){
+    VideoCapture cap;
+    Mat imaginaryInput, complexImage, multsp;
+    Mat padded, filter, mag;
+    Mat image, imagegray, tmp;
+    Mat_&lt;float&gt; realInput, zeros;
+    vector&lt;Mat&gt; planos;
+
+    float gH, gL, Do, c;
+    double radius;
+
+    // guarda tecla capturada
+    char key;
+
+    // valores ideais dos tamanhos da imagem
+    // para calculo da DFT
+    int dft_M, dft_N;
+
+    // abre a câmera default
+    cap.open(0);
+    if(!cap.isOpened())
+        return -1;
+
+    // captura uma imagem para recuperar as
+    // informacoes de gravação
+    cap &gt;&gt; image;
+
+    // identifica os tamanhos otimos para
+    // calculo do FFT
+    dft_M = getOptimalDFTSize(image.rows);
+    dft_N = getOptimalDFTSize(image.cols);
+
+    // realiza o padding da imagem
+    copyMakeBorder(image, padded, 0,
+                   dft_M - image.rows, 0,
+                   dft_N - image.cols,
+                   BORDER_CONSTANT, Scalar::all(0));
+
+    // parte imaginaria da matriz complexa (preenchida com zeros)
+    zeros = Mat_&lt;float&gt;::zeros(padded.size());
+
+    // prepara a matriz complexa para ser preenchida
+    complexImage = Mat(padded.size(), CV_32FC2, Scalar(0));
+
+    // a função de transferência (filtro frequencial) deve ter o
+    // mesmo tamanho e tipo da matriz complexa
+    filter = complexImage.clone();
+
+    // cria uma matriz temporária para criar as componentes real
+    // e imaginaria do filtro ideal
+    tmp = Mat(dft_M, dft_N, CV_32F);
+
+    // cria a matriz com as componentes do filtro e junta
+    // ambas em uma matriz multicanal complexa
+    // Mat comps[];
+
+    gH = 7.0;
+    gL = 4.2;
+    c = 12.3;
+    Do = 13.2;
+
+    for (;;) {
+
+        //prepara o filtro homomorfico dinamico
+        for(int i = 0; i &lt; dft_M; i++) {
+            for(int j = 0; j &lt; dft_N; j++) {
+                radius = (double) (i - dft_M / 2) * (i - dft_M / 2) + (j - dft_N / 2) * (j - dft_N / 2);
+                tmp.at&lt;float&gt; (i, j) = (gH - gL) * (1 - exp(-c * (radius / pow(Do, 2)))) + gL;
+            }
+        }
+        Mat comps[] = {tmp, tmp};
+        merge(comps, 2, filter);
+        cap &gt;&gt; image;
+        cvtColor(image, imagegray, CV_BGR2GRAY);
+        imshow("original", imagegray);
+
+        // realiza o padding da imagem
+        copyMakeBorder(imagegray, padded, 0,
+                       dft_M - image.rows, 0,
+                       dft_N - image.cols,
+                       BORDER_CONSTANT, Scalar::all(0));
+
+        // limpa o array de matrizes que vao compor a
+        // imagem complexa
+        planos.clear();
+        // cria a compoente real
+        realInput = Mat_&lt;float&gt;(padded);
+        // insere as duas componentes no array de matrizes
+        planos.push_back(realInput);
+        planos.push_back(zeros);
+
+        // combina o array de matrizes em uma unica
+        // componente complexa
+        merge(planos, complexImage);
+
+        // calcula o dft
+        dft(complexImage, complexImage);
+
+        // realiza a troca de quadrantes
+        deslocaDFT(complexImage);
+
+        // aplica o filtro frequencial
+        mulSpectrums(complexImage, filter, complexImage, 0);
+
+        // limpa o array de planos
+        planos.clear();
+        // separa as partes real e imaginaria para modifica-las
+        split(complexImage, planos);
+
+        // recompoe os planos em uma unica matriz complexa
+        merge(planos, complexImage);
+
+        // troca novamente os quadrantes
+        deslocaDFT(complexImage);
+
+          // cout &lt;&lt; complexImage.size().height &lt;&lt; endl;
+        // calcula a DFT inversa
+        idft(complexImage, complexImage);
+
+        // limpa o array de planos
+        planos.clear();
+
+        // separa as partes real e imaginaria da
+        // imagem filtrada
+        split(complexImage, planos);
+
+        // normaliza a parte real para exibicao
+        normalize(planos[0], planos[0], 0, 1, CV_MINMAX);
+        imshow("filtrada", planos[0]);
+
+        key = (char) waitKey(10);
+
+        if (key == 27) break; // esc pressed!
+
+        switch(key){
+        // aumenta o gama H
+        case 'q':
+            gH += 0.1;
+            break;
+        // diminui o gama H
+        case 'a':
+            gH -= 0.1;
+            break;
+        // amplifica o gama L
+        case 'w':
+            gL += 0.1;
+            break;
+        // amplifica o gama L
+        case 's':
+            gL -= 0.1;
+            break;
+        // amplifica o c
+        case 'e':
+            c += 0.1;
+            break;
+        // diminui o c
+        case 'd':
+            c -= 0.1;
+            break;
+        // amplifica o D zero
+        case 'r':
+            Do += 0.1;
+            break;
+        // diminui o D zero
+        case 'f':
+            Do -= 0.1;
+            break;
+        }
+
+        cout &lt;&lt; "[gH " &lt;&lt; gH &lt;&lt; "][gL " &lt;&lt; gL &lt;&lt; "][c " &lt;&lt; c &lt;&lt; "][Do " &lt;&lt; Do &lt;&lt; "]" &lt;&lt; endl;
+    }
+    return 0;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Como resultado, temos uma imagem filtrada na qual é possível ver detalhes antes não visto, como as dobras do lençol. Os valores empiricamete ótimos dos parâmetros gama H, gama L, c e D zero foram 7, 4.2, 12.3 e 13.2 respctivamente.</p>
+</div>
+<div id="fig_homomorfico" class="imageblock text-center">
+<div class="content">
+<img src="figs/homomorfico.jpeg" alt="Filtro homomorfico">
+</div>
+<div class="title">Figure 18. filtro homomórfico</div>
+</div>
+</div>
+<div class="sect3">
 <h4 id="_canny_e_pontilhismo">Canny e Pontilhismo</h4>
 <div class="paragraph">
 <p>Para esse exercício, foi implementado o programa cannypoins.cpp. A ideia é usar bordas em uma imagem pontilhada para dar um efeito de melhoramento. O algoritmo pega a imagem disponibilizada pelo usuário, e seleciona pixels aleatóriamente. Para cada pixel selecionado, é armazenada a cor para para então criar um circulo de tamanho de raio definido pelo usuário. Esse efeito criará o aspecto de pontilhismo. A partir disso, foi usada a função que que aplica o algoritmo de canny no pontilhismo para dar mais detalhes as regiões próximas a borda. As imagens a seguir mostram a imagem original com o efeito do pontilhismo e outra com o pontilhismo e canny.</p>
@@ -1505,19 +1746,19 @@ int main(int argvc, char** argv){
 <div class="content">
 <img src="figs/imagem4.jpg" alt="Imagem original">
 </div>
-<div class="title">Figure 18. imagem original</div>
+<div class="title">Figure 19. imagem original</div>
 </div>
 <div id="fig_pontos" class="imageblock text-center">
 <div class="content">
 <img src="figs/pontos.jpg" alt="Imagem com pontilhismo">
 </div>
-<div class="title">Figure 19. pontilhismo</div>
+<div class="title">Figure 20. pontilhismo</div>
 </div>
 <div id="fig_cannypb" class="imageblock text-center">
 <div class="content">
 <img src="figs/cannypb.png" alt="Imagem com pontilhismo e canny">
 </div>
-<div class="title">Figure 20. pontilhismo e canny</div>
+<div class="title">Figure 21. pontilhismo e canny</div>
 </div>
 <div class="paragraph">
 <p>Para fins de comparação e melhor visualização, segue a imagem da borda e a imagem com pontilhismo e canny colorida.</p>
@@ -1526,13 +1767,13 @@ int main(int argvc, char** argv){
 <div class="content">
 <img src="figs/canny.png" alt="Bordas da imagem">
 </div>
-<div class="title">Figure 21. bordas da imagem</div>
+<div class="title">Figure 22. bordas da imagem</div>
 </div>
 <div id="fig_cannypoints" class="imageblock text-center">
 <div class="content">
 <img src="figs/cannypoints.png" alt="Imagem colorida">
 </div>
-<div class="title">Figure 22. colorida</div>
+<div class="title">Figure 23. colorida</div>
 </div>
 <div class="paragraph">
 <p>Segue o código.</p>
@@ -1682,7 +1923,7 @@ int main(int argc, char** argv){
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-10-12 17:31:30 -03
+Last updated 2017-10-12 18:06:35 -03
 </div>
 </div>
 </body>
